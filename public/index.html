@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Zoom App Context Data</title>
+    <script src="https://appssdk.zoom.us/sdk.js"></script>
+    
+
+    <link rel="stylesheet" type="text/css" href="./styles.css">
+  </head>
+
+  <body>
+    <h1>Zoom App Context Data</h1>
+    <div id="output">Initializing…</div>
+
+    <script>
+      // ---------- Configuration ----------
+      const APIS = [
+        { title: "Supported JS APIs", capability: "getSupportedJsApis", call: () => zoomSdk.getSupportedJsApis() },
+        { title: "Running Context",    capability: "getRunningContext",  call: () => zoomSdk.getRunningContext() },
+        { title: "User Context",       capability: "getUserContext",     call: () => zoomSdk.getUserContext() },
+        { title: "App Context",        capability: "getAppContext",      call: () => zoomSdk.getAppContext() },
+        { title: "Meeting Context",    capability: "getMeetingContext",  call: () => zoomSdk.getMeetingContext() },
+        { title: "Meeting UUID",       capability: "getMeetingUUID",     call: () => zoomSdk.getMeetingUUID() },
+      ];
+
+      // ---------- Small DOM helpers ----------
+      const out = document.getElementById("output");
+
+      const clearOut = () => (out.textContent = "");
+
+      const addSection = (title, html) => {
+        const s = document.createElement("section");
+        s.innerHTML = `<h2>${title}</h2>${html}`;
+        out.appendChild(s);
+      };
+
+      const pre = (v) => `<pre>${typeof v === "string" ? v : JSON.stringify(v, null, 2)}</pre>`;
+      
+      const addHint = (text) => {
+        const p = document.createElement("p");
+        p.className = "hint";
+        p.textContent = text;
+        out.prepend(p);
+      };
+
+      // ---------- Error classification (explicit code check) ----------
+      const isMeetingRequired = (err) => {
+        return err
+      };
+
+      // ---------- Render one API ----------
+      const renderApi = async ({ title, call }) => {
+        try {
+          const data = await call();
+          addSection(title, pre(data));
+          return { ok: true, data };
+        } catch (err) {
+          console.error(`[${title}]`, err);
+          const note = isMeetingRequired(err)
+            ? `<p class="error">This API requires the app to be running <em>in a meeting</em>.</p>`
+            : `<p class="error">Failed to load.</p>`;
+          addSection(title, `${note}`);
+          return { ok: false, error: err };
+        }
+      };
+
+      // ---------- Main flow ----------
+      (async function main() {
+        if (typeof zoomSdk === "undefined") {
+          out.innerHTML = `<p class="error">zoomSdk not found. Ensure the SDK script loads before this script.</p>`;
+          return;
+        }
+
+        try {
+          const capabilities = APIS.map(a => a.capability);
+          await zoomSdk.config({ version: "0.16.0", capabilities });
+
+          // remove "Initializing…" once ready
+          clearOut();
+
+          // render all APIs, in order
+          const results = {};
+          for (const api of APIS) {
+            results[api.title] = await renderApi(api);
+          }
+
+          // gentle hint if not obviously in a meeting
+          const rc = results["Running Context"]?.data;
+          const rcText = rc ? JSON.stringify(rc) : "";
+          if (!/inMeeting/i.test(rcText)) {
+            addHint("Hint: Some APIs may be unavailable because the app is not currently running in a meeting.");
+          }
+        } catch (fatal) {
+          console.error("Initialization failed:", fatal);
+          out.innerHTML = `<p class="error">Could not initialize Zoom SDK.</p>${pre(fatal)}`;
+        }
+      })();
+    
+    
+    
+    </script>
+  </body>
+</html>

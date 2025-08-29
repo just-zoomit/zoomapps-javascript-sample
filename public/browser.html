@@ -1,0 +1,45 @@
+<!-- public/browser-version.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Zoom App – Browser Version</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      text-align: center;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 20px;
+    }
+
+    p {
+      font-size: 18px;
+      max-width: 600px;
+      margin: 0 auto 30px;
+    }
+
+    .note {
+      font-size: 14px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <h1>This app runs inside Zoom</h1>
+  <p>This app is built for the Zoom client and won't work in a standard browser.</p>
+  <p class="note">If you're a developer, launch the Zoom app from within the Zoom Client.</p>
+
+  <button id="open-in-zoom" type="button">Open in Zoom</button>
+
+  <script>
+    document.getElementById('open-in-zoom').addEventListener('click', () => {
+      window.open('/auth/start', '_blank', 'noopener');
+    });
+  </script>
+</body>
+</html>
